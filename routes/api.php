@@ -11,6 +11,8 @@ use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\RegisterController;
+use App\Http\Controllers\API\BlogController;
+
 
 // Auth Public Routes
 Route::post('login', [AuthController::class, 'login']);
@@ -35,6 +37,10 @@ Route::get('industries/{id}', [IndustryController::class, 'show']);
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{id}', [CategoryController::class, 'show']);
 
+
+// Blogs Public Routes
+Route::get('blogs', [BlogController::class, 'index']);
+Route::get('blogs/{id}', [BlogController::class, 'show']);
 
 // Applications Public Routes
 Route::post('apply', [ApplicationController::class, 'apply']);
@@ -73,6 +79,11 @@ Route::middleware('auth:sanctum')->group(function () {
 //        Route::get('admin/job_seekers', [AdminController::class, 'getAllJobSeekers']);
 
         // TODO: implement /job_seekers POST method 2 ci qeydiyyat for apply detail
+
+        Route::post('blogs', [BlogController::class, 'store']);
+        Route::put('blogs/{id}', [BlogController::class, 'update']);
+        Route::delete('blogs', [BlogController::class, 'destroy']);
+//        Route::get('blogs/{id}', [BlogController::class, 'edit']);
     });
 
     // Company-only routes
