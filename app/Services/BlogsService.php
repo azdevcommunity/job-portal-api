@@ -2,120 +2,101 @@
 
 namespace App\Services;
 
-use App\Http\Resources\VacancyResource;
+use App\Http\Resources\BlogsResource;
 use App\Models\Company;
-use App\Models\Vacancy;
+use App\Models\Blog;
 use Illuminate\Support\Facades\DB;
 
-class VacancyService
+class BlogsService
 {
-    public function listAllVacancies()
+    public function listAllBlogs()
     {
-        $vacancies = Vacancy::where('vacancies.is_active', true) // Explicitly qualify "is_active"
-        ->where('vacancies.is_blocked', false) // Explicitly qualify "is_blocked"
-        ->join('companies', 'vacancies.company_id', '=', 'companies.id') // Join with companies table
-        ->select('vacancies.*', 'companies.name as company_name') // Select vacancies fields and company name
+        return Blog::where('Blogs.is_active', true) // Explicitly qualify "is_active"
+        ->join('categories', 'Blogs.category_id', '=', 'categories.id') // Join with companies table
+        ->select('Blogs.*', 'categories.name as categories_name') // Select Blogs fields and company name
         ->get();
-
-        return $vacancies;
     }
 
-    public function createVacancy(array $data, int $companyId)
+    public function createBlogs(array $data)
     {
-        $vacancyData = array_merge($data, ['company_id' => $companyId]);
+        $BlogsData = array_merge($data);
 
-        $vacancy = Vacancy::create($vacancyData);
+        $Blogs = Blog::create($BlogsData);
 
-        $cc = Company::where('id', $companyId)->first();
-
-        $vacancy->company_name = $cc->name;
-
-        return $vacancy;
+        return $Blogs;
     }
 
-    public function updateVacancy(Vacancy $vacancy, array $data)
+    public function updateBlogs(Blog $Blogs, array $data)
     {
         $filteredData = array_filter($data, function ($value) {
             return $value !== null;
         });
 
-        $vacancy->update($filteredData);
-        return $vacancy;
+        $Blogs->update($filteredData);
+        return $Blogs;
     }
 
-    public function deleteVacancies($vacancies)
+    public function deleteBlogs($Blog)
     {
-        foreach ($vacancies as $vacancy) {
-            $vacancy->delete();
+        foreach ($Blog as $Blog) {
+            $Blog->delete();
         }
 
-        return ['message' => 'Vacancies deleted successfully'];
+        return ['message' => 'Blogs deleted successfully'];
     }
 
-    public function deactivateVacancy(Vacancy $vacancy)
+    public function deactivateBlogs(Blog $Blogs)
     {
-        $vacancy->update(['is_active' => false]);
-        return ['message' => 'Vacancy deactivated successfully'];
+        $Blogs->update(['is_active' => false]);
+        return ['message' => 'Blogs deactivated successfully'];
     }
 
     public function getById($id)
     {
-        return Vacancy::query()
-            ->join('companies', 'vacancies.company_id', '=', 'companies.id')
-            ->select('vacancies.*', 'companies.name as company_name')
-            ->where('vacancies.is_active', true)
-            ->where('vacancies.is_blocked', false)
+        return Blog::query()
+            ->join('categories', 'Blogs.category_id', '=', 'categories.id')
+            ->select('Blogs.*', 'categories.name as categories_name')
+            ->where('Blogs.is_active', true)
             ->findOrFail($id);
     }
 
-    // TODO: return vacancies only is_blocked false
-    public function companyGetById($id)
-    {
-        return Vacancy::with('company', 'category')
-            ->where('is_blocked', false)
-            ->where('id', $id)->get();
-    }
 
     public function adminGetById($id)
     {
-        return Vacancy::with('company', 'category')
+        return Blog::with('company', 'category')
             ->findOrFail($id);
     }
 
-    public function activateVacancy(Vacancy $vacancy)
+    public function activateBlogs(Blog $Blogs)
     {
-        $vacancy->update(['is_active' => true]);
-        return ['message' => 'Vacancy activated successfully'];
+        $Blogs->update(['is_active' => true]);
+        return ['message' => 'Blogs activated successfully'];
     }
 
-    public function blockVacancy(Vacancy $vacancy)
+    public function blockBlogs(Blog $Blogs)
     {
-        $vacancy->update(['is_blocked' => true, 'is_active' => false]);
-        return ['message' => 'Vacancy blocked successfully'];
+        $Blogs->update(['is_blocked' => true, 'is_active' => false]);
+        return ['message' => 'Blogs blocked successfully'];
     }
 
-    public function unblockVacancy(Vacancy $vacancy)
+    public function unblockBlogs(Blog $Blogs)
     {
-        $vacancy->update(['is_blocked' => false]);
-        return ['message' => 'Vacancy unblocked successfully'];
+        $Blogs->update(['is_blocked' => false]);
+        return ['message' => 'Blogs unblocked successfully'];
     }
 
-    public function getVacanciesByCategory(array $categoryIds)
+    public function getBlogsByCategory(array $categoryIds)
     {
-        return Vacancy::whereIn('category_id', $categoryIds)->get();
+        return Blog::whereIn('category_id', $categoryIds)->get();
     }
 
-    public function filterVacancies(array $filters)
+    public function filterBlogs(array $filters)
     {
-        $query = Vacancy::query();
-        $query->join('companies', 'vacancies.company_id', '=', 'companies.id')
-            ->select('vacancies.*', 'companies.name as company_name', 'companies.logo as logo');
-
-        $query->where('companies.is_blocked', false);
-
-        $query->where('vacancies.is_active', true)
-            ->where('vacancies.is_blocked', false);
-
+        $query = Blog::query();
+        $query->join('companies', 'Blogs.company_id', '=', 'companies.id')
+            ->select('Blogs.*', 'companies.name as company_name', 'companies.logo as logo');
+        $query->where('Blogs.is_active', true)
+            ->where('Blogs.is_blocked', false);
         $filterMappings = [
             'jobType' => 'job_type',
             'seniorityLevel' => 'seniority_level',
@@ -138,6 +119,7 @@ class VacancyService
         $this->applyCaseInsensitiveFilter($query, $filters, 'city');
         $this->applyCaseInsensitiveFilter($query, $filters, 'country');
 
+        // Apply the combined location filter
         if (isset($filters['location'])) {
             $location = strtolower($filters['location']);
             $query->whereRaw("LOWER(CONCAT(city, ', ', country)) LIKE ?", ["%$location%"]);
@@ -145,7 +127,7 @@ class VacancyService
 
         if (!empty($filters['title'])) {
             $title = strtolower($filters['title']);
-            $query->whereRaw('LOWER(vacancies.title) LIKE ?', ["%$title%"]);
+            $query->whereRaw('LOWER(Blogs.title) LIKE ?', ["%$title%"]);
         }
 
         $sortBy = $filters['sortBy'] ?? 'desc';
@@ -154,11 +136,11 @@ class VacancyService
         return $query->get();
     }
 
-    public function filterVacanciesAdmin(array $filters)
+    public function filterBlogsAdmin(array $filters)
     {
-        $query = Vacancy::query();
-        $query->join('companies', 'vacancies.company_id', '=', 'companies.id')
-            ->select('vacancies.*', 'companies.name as company_name', 'companies.logo as logo');
+        $query = Blog::query();
+        $query->join('companies', 'Blogs.company_id', '=', 'companies.id')
+            ->select('Blogs.*', 'companies.name as company_name', 'companies.logo as logo');
         $filterMappings = [
             'jobType' => 'job_type',
             'seniorityLevel' => 'seniority_level',
@@ -181,6 +163,7 @@ class VacancyService
         $this->applyCaseInsensitiveFilter($query, $filters, 'city');
         $this->applyCaseInsensitiveFilter($query, $filters, 'country');
 
+        // Apply the combined location filter
         if (isset($filters['location'])) {
             $location = strtolower($filters['location']);
             $query->whereRaw("LOWER(CONCAT(city, ', ', country)) LIKE ?", ["%$location%"]);
@@ -188,7 +171,7 @@ class VacancyService
 
         if (!empty($filters['title'])) {
             $title = strtolower($filters['title']);
-            $query->whereRaw('LOWER(vacancies.title) LIKE ?', ["%$title%"]);
+            $query->whereRaw('LOWER(Blogs.title) LIKE ?', ["%$title%"]);
         }
 
         $sortBy = $filters['sortBy'] ?? 'desc';
@@ -207,20 +190,24 @@ class VacancyService
 
     public function applyFilters($query, $filters)
     {
+        // Filter by title
         if (!empty($filters['title'])) {
             $query->where('title', 'LIKE', '%' . $filters['title'] . '%');
         }
 
+        // Filter by jobType (array of job types)
         if (!empty($filters['jobType'])) {
             $query->whereIn('job_type', $filters['jobType']);
         }
 
+        // Filter by seniorityLevel (array of seniority levels)
         if (!empty($filters['seniorityLevel'])) {
             $query->whereIn('seniority_level', $filters['seniorityLevel']);
         }
 
-        if (!empty($filters['vacancyId'])) {
-            $query->where('id', $filters['vacancyId']);
+        // Filter by BlogsId
+        if (!empty($filters['BlogsId'])) {
+            $query->where('id', $filters['BlogsId']);
         }
 
         return $query;
@@ -234,8 +221,9 @@ class VacancyService
             return [];
         }
 
-        $query = Vacancy::where('company_id', $companyId);
+        $query = Blog::where('company_id', $companyId);
 
+        // Apply filters
         $query = $this->applyFilters($query, $filters);
 
         return $query->paginate($size, ['*'], 'page', $page);
@@ -249,7 +237,7 @@ class VacancyService
             return [];
         }
 
-        $query = Vacancy::where('company_id', $companyId)
+        $query = Blog::where('company_id', $companyId)
             ->where('is_active', true)
             ->where('is_blocked', false);
 
@@ -259,9 +247,9 @@ class VacancyService
         return $query->paginate($size, ['*'], 'page', $page);
     }
 
-    public function listVacanciesByCompanyId($companyId)
+    public function listBlogsByCompanyId($companyId)
     {
-        return Vacancy::where('company_id', $companyId)
+        return Blog::where('company_id', $companyId)
             ->where('is_active', true)
             ->where('is_blocked', false)
             ->get();

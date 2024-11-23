@@ -3,25 +3,31 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\IndustryCountByIdResource;
 use App\Http\Resources\IndustryResource;
+use App\Models\Company;
 use App\Models\Industry;
 use Illuminate\Http\Request;
 
 class IndustryController extends Controller
 {
-    // Public API to get all industries
     public function index()
     {
         return IndustryResource::collection(Industry::all());
     }
 
-    // Public API to get all industries
+    public function getTotalCompaniesCountById($id)
+    {
+        $totalCompanies = Company::where('industry_id', $id)->count();
+
+        return new IndustryCountByIdResource((object)['total' => $totalCompanies]);
+    }
+
     public function show($id)
     {
         return new IndustryResource(Industry::findOrFail($id));
     }
 
-    // Create a new industry (Admin only)
     public function store(Request $request)
     {
         $request->validate([
@@ -35,7 +41,6 @@ class IndustryController extends Controller
         return response()->json(['message' => 'Industry created successfully', 'industry' => $industry], 201);
     }
 
-    // Update an industry (Admin only)
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -48,7 +53,6 @@ class IndustryController extends Controller
         return response()->json(['message' => 'Industry updated successfully', 'industry' => $industry], 200);
     }
 
-    // Delete an industry (Admin only)
     public function destroy($id)
     {
         $industry = Industry::findOrFail($id);
@@ -56,4 +60,5 @@ class IndustryController extends Controller
 
         return response()->json(['message' => 'Industry deleted successfully'], 200);
     }
+
 }

@@ -145,14 +145,6 @@ class VacancyController extends Controller
         $filters = $request->all();
         $vacancies = $this->vacancyService->filterVacancies($filters);
 
-        $user = Auth::user();
-
-        // Ensure the user is a company user
-        if ($user->role === 'admin') {
-            return response()
-                ->json(['data' => VacancyAdminListResource::collection($vacancies),
-                    'total' => $vacancies->count()]);
-        }
         return response()->json(['data' => VacancyListResource::collection($vacancies), 'total' => $vacancies->count()]
         );
     }
@@ -161,10 +153,8 @@ class VacancyController extends Controller
     {
         $token = request()->bearerToken();
 
-        // Manually find the user by the token
         $user = $token ? PersonalAccessToken::findToken($token)?->tokenable : null;
 
-        // Get pagination parameters
         $size = request()->query('size', 10);
         $page = request()->query('page', 1);
 
