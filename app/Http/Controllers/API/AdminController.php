@@ -28,7 +28,6 @@ class AdminController extends Controller
         $this->vacancyService = $vacancyService;
     }
 
-    // Block company by ID
     public function blockCompany($id)
     {
         $company = Company::findOrFail($id);
@@ -54,7 +53,6 @@ class AdminController extends Controller
         return new VacancyAdminResource($vacancy);
     }
 
-    // Unblock company by ID
     public function unblockCompany($id)
     {
         $company = Company::findOrFail($id);
@@ -73,7 +71,6 @@ class AdminController extends Controller
     }
 
 
-    // Vacancies API
     public function getVacancyById($id)
     {
         $vacancy = Vacancy::findOrFail($id);
