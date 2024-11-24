@@ -72,7 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
         Route::post('blogs', [BlogController::class, 'store']);
-        Route::put('blogs/{id}', [BlogController::class, 'update']);
+        Route::post('blogs/{id}', [BlogController::class, 'update']);
         Route::delete('blogs', [BlogController::class, 'destroy']);
     });
 

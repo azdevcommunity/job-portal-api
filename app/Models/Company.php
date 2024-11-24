@@ -24,6 +24,12 @@ class Company extends Model
         'industry_id'
     ];
 
+    protected $hidden=[];
+
+    protected $casts = [
+        'logo' => 'string',
+    ];
+
     public function vacancies()
     {
         return $this->hasMany(Vacancy::class);

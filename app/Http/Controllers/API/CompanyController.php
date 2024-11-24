@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\Vacancy;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
@@ -104,18 +105,18 @@ class CompanyController extends Controller
         $this->authorize('update', $company);
 
         if ($request->hasFile('logo')) {
-            // Delete existing logo if it exists
-            if ($company->logo && Storage::exists($company->logo)) {
-                Storage::delete($company->logo);
+            if ($company->logo && Storage::exists(str_replace('/storage/', '', $company->logo))) {
+                Storage::delete(str_replace('/storage/', '', $company->logo));
             }
 
             $logoPath = $request->file('logo')->store('logos', 'public');
             $company->logo = '/storage/' . $logoPath;
         }
 
-
-        $company->update($request->validated());
-
+        $company->update(array_merge(
+            $request->validated(),
+            ['logo' => $company->logo]
+        ));
 
         return response()->json([
             'message' => 'Company updated successfully',
