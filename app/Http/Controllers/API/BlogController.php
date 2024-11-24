@@ -10,6 +10,8 @@ use App\Models\Blog;
 use App\Services\BlogsService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class BlogController extends Controller
@@ -31,13 +33,6 @@ class BlogController extends Controller
         return BlogsResource::collection($blogs);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('blogs.create');
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -64,24 +59,35 @@ class BlogController extends Controller
 
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Blog $blog)
-    {
-        return view('blogs.edit', compact('blog'));
-    }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(UpdateBlogRequest $request, $id)
     {
+        Log::info('Request data:', $request->all());
+        Log::info('Validated data:', $request->validated());
+
         $blog = Blog::findOrFail($id);
         $this->authorize('update', $blog);
 
-        $updatedBlog = $this->blogsService->updateBlogs($blog, $request->validated());
-        return new BlogsResource($updatedBlog);   }
+        $validatedData = $request->validated();
+
+        // Handle the image upload
+        if ($request->hasFile('image')) {
+            // Delete the old image if it exists
+            if ($blog->image && Storage::exists($blog->image)) {
+                Storage::delete($blog->image);
+            }
+
+            // Store the new image in the 'public/blogs' directory
+            $imagePath = $request->file('image')->store('blogs', 'public');
+            $validatedData['image'] = $imagePath;
+        }
+
+        $updatedBlog = $this->blogsService->updateBlogs($blog, $validatedData);
+        return new BlogsResource($updatedBlog);
+    }
 
     /**
      * Remove the specified resource from storage.
